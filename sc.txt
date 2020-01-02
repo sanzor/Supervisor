@@ -1,0 +1,2 @@
+c("D:/Erlang/Supervisor/sup.erl"),f(),X=sup:start().
+A=fun()->process_flag(trap_exit,true),{ok,X}=sup:start(),gen_server:call(X,lala),receive MSG -> MSG end end.
