@@ -29,10 +29,10 @@ handle_call(_,_,S)->
 
 handle_cast(Message,State)->
     {noreply,State,?DELAY}.
-handle_info(Message,State=#state{name=N,skill=good})->
+handle_info(timeout,State=#state{name=N,skill=good})->
     io:format("~s produced good sound~n",[N]),
     {noreply,State,?DELAY};
-handle_info(Message,State=#state{name=N,skill=bad})->
+handle_info(timeout,State=#state{name=N,skill=bad})->
     case random:uniform(5) of
         1->
             io:format("~s played a false note~n",[N]),
