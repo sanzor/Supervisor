@@ -8,10 +8,11 @@
 -record(state,{
     name,
     qual,
-    pos
+    job
 }).
-start(Role,Pos)->
-    gen_server:start_link(?MODULE,?MODULE,[Role,Pos]).
+start(Job,Qual)->
+    {ok,X}=gen_server:start_link(?MODULE,?MODULE,[Job,Qual]),
+    X.
 stop(Ref)->
     gen_server:stop(Ref).
 quit(Pid)->
@@ -24,17 +25,17 @@ surnames()->
 
 pick_name()->
     lists:nth(random:unfirom(6),names)++" "++lists:nth(random:unfirom(5),surnames).
-init([Qual,Pos])->
+init([Job,Qual])->
     process_flag(trap_exit,true),
     random:seed(now()),
-    Position=atom_to_list(Pos),
+    Jb=atom_to_list(Job),
     Name=pick_name(),
-    {ok,#state{name=Name,qual=Qual},?DELAY}.
+    {ok,#state{name=Name,qual=Qual,job=Jb},?DELAY}.
 
 handle_info(timeout,State=#state{name=Name,qual=good})->
     io:format("~s produced good result ~n",[Name]),
     {noreply,State,?DELAY};
-handle_info(timeout,State=#state{qual=bad,name=Name})->
+handle_info(timeout,State=#state{name=Name,qual=bad})->
     case random:uniform(3) of
         1 -> io:format(" ~s got one more chance~n",[Name]),
              {noreply,State,?DELAY};
@@ -51,8 +52,16 @@ handle_cast({run,Name,Qual},State)->
     {noreply,#state{name=Name,qual=Qual},?DELAY};
 handle_cast(_,State)->
     {noreply,State}.
-terminate(Reason,State)->
-    {ok,S}=file:open("D:/Erlang/Supervisor/err.txt",[read,write,append]),
-    io:format(S,"~s~n",[State]),
-    ok.
-    
+
+terminate(normal,S)->
+    io:format("~s:~s terminated normally ~n",[S#state.name,S#state.job]);
+terminate(no_more_chances,S)->
+    io:format("~s:~s terminated due to no more chances",[S#state.name,S#state.job]);
+terminate(shutdown,S)->
+    io:format("~s:~s closed due to shutdown",[S#state.name,S#state.job]);
+terminate(Reason,S)->
+    io:format("~s:~s Unknown reason for terminating").
+
+
+super(one)->
+    init({one_for_one,3,60}).
